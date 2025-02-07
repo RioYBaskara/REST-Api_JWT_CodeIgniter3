@@ -57,13 +57,17 @@ class User extends REST_Controller {
 		// set validation rules
 		$this->form_validation->set_rules('username', 'Username', 'trim|required|alpha_numeric|min_length[4]|is_unique[users.username]', array('is_unique' => 'This username already exists. Please choose another one.'));
 		$this->form_validation->set_rules('email', 'Email', 'trim|required|valid_email|is_unique[users.email]');
-		$this->form_validation->set_rules('password', 'Password', 'trim|required|min_length[6]');
+		$this->form_validation->set_rules('password', 'Password', 'trim|required|min_length[3]');
 		//$this->form_validation->set_rules('password_confirm', 'Confirm Password', 'trim|required|min_length[6]|matches[password]');
 		
 		if ($this->form_validation->run() === false) {
 			
 			// validation not ok, send validation errors to the view
-            $this->response(['Validation rules violated'], REST_Controller::HTTP_OK);
+            $this->response([
+				'status' => 'error',
+				'message' => 'Validation rules violated',
+				'errors' => validation_errors() 
+			], REST_Controller::HTTP_BAD_REQUEST);
 			
 		} else {
 			
@@ -83,14 +87,17 @@ class User extends REST_Controller {
                 $final['status'] = true;
                 $final['uid'] = $res;
                 $final['message'] = 'Thank you for registering your new account!';
-                $final['note'] = 'You have successfully register. Please check your email inbox to confirm your email address.';
+                $final['note'] = 'User created, please login.';
 
                 $this->response($final, REST_Controller::HTTP_OK); 
 
 			} else {
 				
 				// user creation failed, this should never happen
-                $this->response(['There was a problem creating your new account. Please try again.'], REST_Controller::HTTP_OK);
+                $this->response([
+					'status' => 'error',
+					'message' => 'There was a problem creating your new account. Please try again.'
+				], REST_Controller::HTTP_INTERNAL_SERVER_ERROR); 				
 			}
 			
 		}
@@ -112,7 +119,11 @@ class User extends REST_Controller {
 		if ($this->form_validation->run() == false) {
 			
 			// validation not ok, send validation errors to the view
-            $this->response(['Validation rules violated'], REST_Controller::HTTP_OK);
+            $this->response([
+				'status' => 'error',
+				'message' => 'Validation rules violated',
+				'errors' => validation_errors() 
+			], REST_Controller::HTTP_BAD_REQUEST);
 
 		} else {
 			
@@ -146,8 +157,10 @@ class User extends REST_Controller {
 				
 			} else {
 				
-				// login failed
-                $this->response(['Wrong username or password.'], REST_Controller::HTTP_OK);
+				$this->response([
+					'status' => 'error',
+					'message' => 'Wrong username or password.'
+				], REST_Controller::HTTP_UNAUTHORIZED); // 401				
 				
 			}
 			
@@ -178,7 +191,10 @@ class User extends REST_Controller {
 			// there user was not logged in, we cannot logged him out,
 			// redirect him to site root
 			// redirect('/');
-            $this->response(['There was a problem. Please try again.'], REST_Controller::HTTP_OK);	
+            $this->response([
+				'status' => 'error',
+				'message' => 'You need to be logged in to logout.'
+			], REST_Controller::HTTP_UNAUTHORIZED); // 401			
 		}
 		
 	}
